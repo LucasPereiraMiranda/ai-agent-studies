@@ -1,0 +1,2 @@
+CREATE DATABASE flowise;
+CREATE DATABASE langfuse;
