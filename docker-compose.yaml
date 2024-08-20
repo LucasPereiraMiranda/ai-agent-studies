@@ -1,0 +1,155 @@
+version: "3.7"
+
+services:
+  flowise:
+    image: flowiseai/flowise:latest
+    networks:
+      - minha_rede
+    volumes:
+      - flowise_data:/root/.flowise
+    environment:
+      - FLOWISE_USERNAME=admin
+      - FLOWISE_PASSWORD=Mfcd62!!Mfcd62!!
+      - DATABASE_TYPE=postgres
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=senha
+      - DATABASE_NAME=postgres
+      - FLOWISE_SECRETKEY_OVERWRITE=vwV94rdf4RdwEdffd0vZp2hf6
+    depends_on:
+      - postgres
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.flowise.rule=Host(flowise.perfexsaas.com.br)
+        - traefik.http.routers.flowise.entrypoints=websecure
+        - traefik.http.routers.flowise.tls.certresolver=letsencryptresolver
+        - traefik.http.services.flowise.loadBalancer.server.port=3000
+        - traefik.http.routers.flowise.service=flowise
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    networks:
+      - minha_rede
+    ports:
+      - "9000:9443"
+    volumes:
+      - portainer_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.portainer.rule=Host(portainer.perfexsaas.com.br)
+        - traefik.http.routers.portainer.entrypoints=websecure
+        - traefik.http.routers.portainer.tls.certresolver=letsencryptresolver
+        - traefik.http.services.portainer.loadBalancer.server.port=9443
+        - traefik.http.routers.portainer.service=portainer
+
+  postgres:
+    image: astraonline/postgrespgvector:2024
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=senha
+    networks:
+      - minha_rede
+    ports:
+      - 5436:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1024M
+
+  redis:
+    image: redis:latest
+    command: redis-server --appendonly yes --port 6379
+    volumes:
+      - redis_data:/data
+    networks:
+      - minha_rede
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1024M
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: astraonlineweb@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: Mfcd62!!Mfcd62!!
+    networks:
+      - minha_rede
+    ports:
+      - "3007:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1024M
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.pgadmin.rule=Host(pgadmin.perfexsaas.com.br)
+        - traefik.http.services.pgadmin.loadBalancer.server.port=80
+        - traefik.http.routers.pgadmin.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.pgadmin.entrypoints=websecure
+        - traefik.http.routers.pgadmin.tls=true
+
+volumes:
+  flowise_data:
+    external: true
+    name: flowise_data
+  postgres_data:
+    external: true
+    name: postgres_data
+  pgadmin_data:
+    external: true
+    name: pgadmin_data
+  redis_data:
+    external: true
+    name: redis_data
+  portainer_data:
+    external: true
+    name: portainer_data
+
+networks:
+  minha_rede:
+    external: true
+    name: minha_rede
