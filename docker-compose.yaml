@@ -4,21 +4,23 @@ services:
   flowise:
     image: flowiseai/flowise:latest
     networks:
-      - minha_rede
+      - network
     volumes:
       - flowise_data:/root/.flowise
     environment:
       - FLOWISE_USERNAME=admin
-      - FLOWISE_PASSWORD=Mfcd62!!Mfcd62!!
+      - FLOWISE_PASSWORD=senha
       - DATABASE_TYPE=postgres
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=senha
-      - DATABASE_NAME=postgres
+      - DATABASE_NAME=flowise
       - FLOWISE_SECRETKEY_OVERWRITE=vwV94rdf4RdwEdffd0vZp2hf6
     depends_on:
       - postgres
+    ports:
+      - "3000:3000"
     deploy:
       mode: replicated
       replicas: 1
@@ -40,7 +42,7 @@ services:
   portainer:
     image: portainer/portainer-ce:latest
     networks:
-      - minha_rede
+      - network
     ports:
       - "9000:9443"
     volumes:
@@ -70,12 +72,11 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=senha
     networks:
-      - minha_rede
+      - network
     ports:
       - 5436:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     deploy:
       mode: replicated
       replicas: 1
@@ -93,7 +94,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - minha_rede
+      - network
     deploy:
       placement:
         constraints:
@@ -109,7 +110,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: astraonlineweb@gmail.com
       PGADMIN_DEFAULT_PASSWORD: Mfcd62!!Mfcd62!!
     networks:
-      - minha_rede
+      - network
     ports:
       - "3007:80"
     volumes:
@@ -132,6 +133,50 @@ services:
         - traefik.http.routers.pgadmin.entrypoints=websecure
         - traefik.http.routers.pgadmin.tls=true
 
+  n8n:
+    image: n8nio/n8n:latest
+    networks:
+      - network
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=senha
+      - N8N_PROTOCOL=http
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_EMAIL_MODE=smtp
+      - N8N_SMTP_HOST=smtp.example.com
+      - N8N_SMTP_PORT=587
+      - N8N_SMTP_USER=your-smtp-user
+      - N8N_SMTP_PASS=your-smtp-pass
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_PASSWORD=senha
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.n8n.rule=Host(n8n.perfexsaas.com.br)
+        - traefik.http.routers.n8n.entrypoints=websecure
+        - traefik.http.routers.n8n.tls.certresolver=letsencryptresolver
+        - traefik.http.services.n8n.loadBalancer.server.port=5678
+        - traefik.http.routers.n8n.service=n8n
+
 volumes:
   flowise_data:
     external: true
@@ -148,8 +193,11 @@ volumes:
   portainer_data:
     external: true
     name: portainer_data
+  n8n_data:
+    external: true
+    name: n8n_data
 
 networks:
-  minha_rede:
+  network:
     external: true
-    name: minha_rede
+    name: network
