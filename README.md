@@ -25,6 +25,12 @@ Project to study AI agent ecossystem using flowise, langfuse, typeboot, n8n, pgv
 
 ## How to run
 
+We can up our containers with:
+
+```bash
+docker-compose up
+```
+
 ## Create volumes
 
 We can create our volumes:
