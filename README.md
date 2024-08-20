@@ -83,5 +83,5 @@ CREATE DATABASE n8n;
 ![pg admin](./.github/img/pg-admin.png)  
 
 
-**Postgres** local: [http://localhost:3007/](http://localhost:3007/)
+**Postgres** local:
 ![Postgres](./.github/img/postgres.png)  
